@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "buildCommand": "cd client && npm install && npm run build",
+  "outputDirectory": "client/dist",
+  "installCommand": "npm install",
+  "functions": {
+    "api/**/*.js": {
+      "memory": 1024,
+      "maxDuration": 30
+    }
+  },
+  "routes": [
+    { "src": "/api/curriculum", "dest": "/api/curriculum.js" },
+    { "src": "/api/week", "dest": "/api/week.js" },
+    { "src": "/api/generate", "dest": "/api/generate.js" },
+    { "src": "/api/cache/stats", "dest": "/api/cache/stats.js" },
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
+}
