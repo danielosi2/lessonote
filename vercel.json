@@ -1,1 +1,11 @@
-ewogICJ2ZXJzaW9uIjogMiwKICAiYnVpbGRDb21tYW5kIjogImNkIGNsaWVudCAmJiBucG0gaW5zdGFsbCAmJiBucG0gcnVuIGJ1aWxkIiwKICAib3V0cHV0RGlyZWN0b3J5IjogImNsaWVudC9kaXN0IiwKICAiaW5zdGFsbENvbW1hbmQiOiAibnBtIGluc3RhbGwiLAogICJmdW5jdGlvbnMiOiB7CiAgICAiYXBpLyoqLnRvcCI6IHsgIm1lbW9yeSI6IDEwMjQsICJtYXhEdXJhdGlvbiI6IDMwIH0KICB9LAogICJyb3V0ZXMiOiBbCiAgICB7ICJzcmMiOiAiL2FwaS8oLiopIiwgImRlc3QiOiAiL2FwaS8kMS5qcyIgfSwKICAgIHsgImhhbmRsZSI6ICJmaWxlc3lzdGVtIiB9LAogICAgeyAKICAgICAgInNyYyI6ICIvKC4qXC4oanN8Y3NzfHBuZ3xqcGd8anBlZ3xnaWZ8c3ZnfGljb3x3b2ZmfHdvZmYyfHR0Znxlb3QpJCkiLCAKICAgICAgImRlc3QiOiAiLyQxIiwKICAgICAgImNvbnRpbnVlIjogdHJ1ZSAKICAgIH0sCiAgICB7ICJzcmMiOiAiLyguKikiLCAiZGVzdCI6ICIvaW5kZXguaHRtbCIgfQogIF0KfQ==
+{
+  "version": 2,
+  "buildCommand": "cd client && npm install && npm run build",
+  "outputDirectory": "client/dist",
+  "installCommand": "cd client && npm install",
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/client/dist/$1" }
+  ]
+}
