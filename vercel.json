@@ -1,1 +1,14 @@
-ewogICJ2ZXJzaW9uIjogMiwKICAiYnVpbGRDb21tYW5kIjogImNkIGNsaWVudCAmJiBucG0gcnVuIGJ1aWxkIiwKICAib3V0cHV0RGlyZWN0b3J5IjogImNsaWVudC9kaXN0IiwKICAiZnVuY3Rpb25zIjogewogICAgImFwaS8qKi8qLmpzIjogewogICAgICAicnVudGltZSI6ICJub2RlanMxOC54IgogICAgfQogIH0sCiAgInJld3JpdGVzIjogWwogICAgeyAic291cmNlIjogIi9hcGkvKC4qKSIsICJkZXN0aW5hdGlvbiI6ICIvYXBpLyQxIiB9CiAgXQp9
+{
+  "version": 2,
+  "buildCommand": "cd client && npm run build",
+  "outputDirectory": "client/dist",
+  "functions": {
+    "api/**/*.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
