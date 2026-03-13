@@ -2,13 +2,11 @@
   "version": 2,
   "buildCommand": "cd client && npm run build",
   "outputDirectory": "client/dist",
-  "functions": {
-    "server.js": {
-      "runtime": "nodejs18.x"
-    }
-  },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/server.js" },
-    { "source": "/(.*)", "destination": "/server.js" }
+    { "source": "/api/generate", "destination": "/api/generate.js" },
+    { "source": "/api/curriculum", "destination": "/api/curriculum.js" },
+    { "source": "/api/week", "destination": "/api/week.js" },
+    { "source": "/api/cache/stats", "destination": "/api/cache/stats.js" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

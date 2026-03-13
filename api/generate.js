@@ -1,116 +1,82 @@
+const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-// Default curriculum data (used as fallback if curriculum.json doesn't exist)
-const defaultCurriculum = {
-  "JSS 1": {
-    "Mathematics": {
-      "First Term": [
-        { "week": 1, "topics": { "Number Bases": "Introduction to number bases (base 2, 8, 10)", "Counting": "Counting in thousands" } },
-        { "week": 2, "topics": { "Whole Numbers": "Ordering and rounding whole numbers" } },
-        { "week": 3, "topics": "" }
-      ],
-      "Second Term": [
-        { "week": 1, "topics": { "Fractions": "Proper and improper fractions" } }
-      ],
-      "Third Term": [
-        { "week": 1, "topics": { "Revision": "Review of first and second term work" } }
-      ]
-    },
-    "English Language": {
-      "First Term": [
-        { "week": 1, "topics": { "Speech": "Vowels and consonants", "Composition": "Paragraph writing" } },
-        { "week": 2, "topics": { "Grammar": "Nouns and pronouns" } }
-      ]
-    }
-  },
-  "JSS 2": {
-    "Mathematics": {
-      "First Term": [
-        { "week": 1, "topics": { "Algebra": "Simple equations" } },
-        { "week": 2, "topics": { "Geometry": "Angles and triangles" } }
-      ]
-    }
-  },
-  "SS 1": {
-    "Mathematics": {
-      "First Term": [
-        { "week": 1, "topics": { "Number Bases": "Base 2, 8, 10 conversion" } },
-        { "week": 2, "topics": { "Exponents": "Laws of exponents" } },
-        { "week": 3, "topics": { "Logarithms": "Introduction to logarithms" } }
-      ],
-      "Second Term": [
-        { "week": 1, "topics": { "Trigonometry": "Introduction to trigonometric ratios" } }
-      ]
-    },
-    "Physics": {
-      "First Term": [
-        { "week": 1, "topics": { "Measurement": "Length, mass, time" } },
-        { "week": 2, "topics": { "Motion": "Speed and velocity" } }
-      ]
-    },
-    "Chemistry": {
-      "First Term": [
-        { "week": 1, "topics": { "Matter": "States of matter" } }
-      ]
-    },
-    "Biology": {
-      "First Term": [
-        { "week": 1, "topics": { "Cell": "Cell structure and organization" } }
-      ]
-    }
-  },
-  "SS 2": {
-    "Mathematics": {
-      "First Term": [
-        { "week": 1, "topics": { "Algebraic Processes": "Factorization" } },
-        { "week": 2, "topics": { "Geometry": "Circle theorems" } }
-      ]
-    }
-  },
-  "SS 3": {
-    "Mathematics": {
-      "First Term": [
-        { "week": 1, "topics": { "Revision": "WAEC preparation review" } }
-      ]
+// Load curriculum
+const curriculum = JSON.parse(
+  fs.readFileSync(path.join(process.cwd(), 'curriculum.json'), 'utf-8')
+);
+
+// In-memory cache (won't persist between function invocations)
+const noteCache = new Map();
+
+// OpenRouter free models
+const FREE_MODELS = [
+  'meta-llama/llama-3.1-8b-instruct:free',
+  'google/gemma-2-9b-it:free',
+  'microsoft/phi-3-mini-128k-instruct:free',
+  'mistralai/mistral-7b-instruct:free',
+];
+
+let currentModelIndex = 0;
+
+async function generateWithAI(prompt) {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) throw new Error('Missing OPENROUTER_API_KEY');
+  
+  for (let attempt = 0; attempt < FREE_MODELS.length; attempt++) {
+    const model = FREE_MODELS[currentModelIndex];
+    
+    try {
+      const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
+        model,
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 4096,
+      }, {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://lessonote.vercel.app',
+        },
+      });
+      
+      return response.data.choices[0].message.content;
+    } catch (err) {
+      console.log(`[AI] Model ${model} failed: ${err.message}`);
+      currentModelIndex = (currentModelIndex + 1) % FREE_MODELS.length;
+      
+      if (attempt === FREE_MODELS.length - 1) {
+        throw new Error('All free models exhausted. Try again later.');
+      }
     }
   }
-};
-
-// Try to load curriculum.json, fall back to default if it doesn't exist
-let curriculum;
-try {
-  curriculum = JSON.parse(
-    fs.readFileSync(path.join(process.cwd(), 'curriculum.json'), 'utf-8')
-  );
-} catch (e) {
-  curriculum = defaultCurriculum;
 }
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+function getWeekData(cls, subject, term, weekNum) {
+  try {
+    const weeks = curriculum[cls][subject][term];
+    return weeks.find(w => String(w.week) === String(weekNum)) || null;
+  } catch {
+    return null;
+  }
+}
 
 module.exports = async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
 
   const { cls, subject, term, week } = req.body;
   if (!cls || !subject || !term || !week) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
-  let weekData;
-  try {
-    const weeks = curriculum[cls][subject][term];
-    weekData = weeks.find(w => String(w.week) === String(week));
-  } catch {
-    return res.status(404).json({ error: 'Week data not found' });
+  const cacheKey = `${cls}||${subject}||${term}||${week}`;
+  if (noteCache.has(cacheKey)) {
+    return res.json({ note: noteCache.get(cacheKey), cached: true });
   }
+
+  const weekData = getWeekData(cls, subject, term, week);
   if (!weekData) return res.status(404).json({ error: 'Week data not found' });
 
   const topics = weekData.topics || {};
@@ -185,11 +151,11 @@ By the end of this lesson, students should be able to:
 Make the note practical, detailed, and appropriate for Nigerian secondary school students following the NERDC curriculum.`;
 
   try {
-    const result = await model.generateContent(prompt);
-    const note = result.response.text();
+    const note = await generateWithAI(prompt);
+    noteCache.set(cacheKey, note);
     res.json({ note, cached: false });
   } catch (err) {
-    console.error('Gemini error:', err.message);
+    console.error('AI error:', err.message);
     res.status(500).json({ error: 'Failed to generate note: ' + err.message });
   }
 };
