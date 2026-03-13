@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 
@@ -17,9 +17,50 @@ const curriculum = JSON.parse(
 // In-memory note cache
 const noteCache = new Map();
 
-// Initialize Gemini
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+// OpenRouter free models (rotate if one hits quota)
+const FREE_MODELS = [
+  'meta-llama/llama-3.1-8b-instruct:free',
+  'google/gemma-2-9b-it:free',
+  'microsoft/phi-3-mini-128k-instruct:free',
+  'mistralai/mistral-7b-instruct:free',
+];
+
+let currentModelIndex = 0;
+
+async function generateWithAI(prompt) {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) throw new Error('Missing OPENROUTER_API_KEY');
+  
+  // Try each free model
+  for (let attempt = 0; attempt < FREE_MODELS.length; attempt++) {
+    const model = FREE_MODELS[currentModelIndex];
+    
+    try {
+      const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
+        model,
+        messages: [{ role: 'user', content: prompt }],
+        max_tokens: 4096,
+      }, {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://lessonote.vercel.app',
+        },
+      });
+      
+      return response.data.choices[0].message.content;
+    } catch (err) {
+      console.log(`[AI] Model ${model} failed: ${err.message}`);
+      // Rotate to next model
+      currentModelIndex = (currentModelIndex + 1) % FREE_MODELS.length;
+      
+      // If this was the last model, throw error
+      if (attempt === FREE_MODELS.length - 1) {
+        throw new Error('All free models exhausted. Try again later.');
+      }
+    }
+  }
+}
 
 // Helper: get weeks array for class/subject/term
 function getWeeks(cls, subject, term) {
@@ -125,12 +166,11 @@ app.post('/api/generate', async (req, res) => {
     + 'Make the note practical, detailed, and appropriate for Nigerian secondary school students following the NERDC curriculum.';
 
   try {
-    const result = await model.generateContent(prompt);
-    const note = result.response.text();
+    const note = await generateWithAI(prompt);
     noteCache.set(cacheKey, note);
     res.json({ note, cached: false });
   } catch (err) {
-    console.error('Gemini error:', err.message);
+    console.error('AI error:', err.message);
     res.status(500).json({ error: 'Failed to generate note: ' + err.message });
   }
 });
