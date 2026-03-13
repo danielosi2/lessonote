@@ -86,10 +86,12 @@ const curriculum = defaultCurriculum;
 
 // OpenRouter free models (rotate if one hits quota)
 const FREE_MODELS = [
-  'meta-llama/llama-3.1-8b-instruct:free',
-  'google/gemma-2-9b-it:free',
-  'microsoft/phi-3-mini-128k-instruct:free',
-  'mistralai/mistral-7b-instruct:free',
+  'openrouter/hunter-alpha',
+  'stepfun/step-3.5-flash:free',
+  'arcee-ai/trinity-large-preview:free',
+  'nvidia/nemotron-3-super-120b-a12b:free',
+  'arcee-ai/trinity-mini:free',
+  'openrouter/free',
 ];
 
 let currentModelIndex = 0;
