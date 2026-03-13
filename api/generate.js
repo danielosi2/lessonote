@@ -1,16 +1,90 @@
 const axios = require('axios');
-const fs = require('fs');
-const path = require('path');
 
-// Load curriculum
-const curriculum = JSON.parse(
-  fs.readFileSync(path.join(process.cwd(), 'curriculum.json'), 'utf-8')
-);
+// Default curriculum data (fallback)
+const defaultCurriculum = {
+  "JSS 1": {
+    "Mathematics": {
+      "First Term": [
+        { "week": 1, "topics": { "Number Bases": "Introduction to number bases (base 2, 8, 10)", "Counting": "Counting in thousands" } },
+        { "week": 2, "topics": { "Whole Numbers": "Ordering and rounding whole numbers" } }
+      ],
+      "Second Term": [
+        { "week": 1, "topics": { "Fractions": "Proper and improper fractions" } }
+      ],
+      "Third Term": [
+        { "week": 1, "topics": { "Revision": "Review of first and second term work" } }
+      ]
+    },
+    "English Language": {
+      "First Term": [
+        { "week": 1, "topics": { "Speech": "Vowels and consonants", "Composition": "Paragraph writing" } },
+        { "week": 2, "topics": { "Grammar": "Nouns and pronouns" } }
+      ]
+    }
+  },
+  "JSS 2": {
+    "Mathematics": {
+      "First Term": [
+        { "week": 1, "topics": { "Algebra": "Simple equations" } },
+        { "week": 2, "topics": { "Geometry": "Angles and triangles" } }
+      ]
+    }
+  },
+  "JSS 3": {
+    "Mathematics": {
+      "First Term": [
+        { "week": 1, "topics": { "Algebra": "Simultaneous equations" } }
+      ]
+    }
+  },
+  "SSS 1": {
+    "Mathematics": {
+      "First Term": [
+        { "week": 1, "topics": { "Number Bases": "Base 2, 8, 10 conversion" } },
+        { "week": 2, "topics": { "Exponents": "Laws of exponents" } },
+        { "week": 3, "topics": { "Logarithms": "Introduction to logarithms" } }
+      ],
+      "Second Term": [
+        { "week": 1, "topics": { "Trigonometry": "Introduction to trigonometric ratios" } }
+      ]
+    },
+    "Physics": {
+      "First Term": [
+        { "week": 1, "topics": { "Measurement": "Length, mass, time" } },
+        { "week": 2, "topics": { "Motion": "Speed and velocity" } }
+      ]
+    },
+    "Chemistry": {
+      "First Term": [
+        { "week": 1, "topics": { "Matter": "States of matter" } }
+      ]
+    },
+    "Biology": {
+      "First Term": [
+        { "week": 1, "topics": { "Cell": "Cell structure and organization" } }
+      ]
+    }
+  },
+  "SSS 2": {
+    "Mathematics": {
+      "First Term": [
+        { "week": 1, "topics": { "Algebraic Processes": "Factorization" } },
+        { "week": 2, "topics": { "Geometry": "Circle theorems" } }
+      ]
+    }
+  },
+  "SSS 3": {
+    "Mathematics": {
+      "First Term": [
+        { "week": 1, "topics": { "Revision": "WAEC preparation review" } }
+      ]
+    }
+  }
+};
 
-// In-memory cache (won't persist between function invocations)
-const noteCache = new Map();
+const curriculum = defaultCurriculum;
 
-// OpenRouter free models
+// OpenRouter free models (rotate if one hits quota)
 const FREE_MODELS = [
   'meta-llama/llama-3.1-8b-instruct:free',
   'google/gemma-2-9b-it:free',
@@ -62,6 +136,14 @@ function getWeekData(cls, subject, term, weekNum) {
 }
 
 module.exports = async (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -71,13 +153,10 @@ module.exports = async (req, res) => {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
-  const cacheKey = `${cls}||${subject}||${term}||${week}`;
-  if (noteCache.has(cacheKey)) {
-    return res.json({ note: noteCache.get(cacheKey), cached: true });
-  }
-
   const weekData = getWeekData(cls, subject, term, week);
-  if (!weekData) return res.status(404).json({ error: 'Week data not found' });
+  if (!weekData) {
+    return res.status(404).json({ error: 'Week data not found for this selection' });
+  }
 
   const topics = weekData.topics || {};
   let topicContext = '';
@@ -152,7 +231,6 @@ Make the note practical, detailed, and appropriate for Nigerian secondary school
 
   try {
     const note = await generateWithAI(prompt);
-    noteCache.set(cacheKey, note);
     res.json({ note, cached: false });
   } catch (err) {
     console.error('AI error:', err.message);
