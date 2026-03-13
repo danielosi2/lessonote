@@ -3,12 +3,12 @@
   "buildCommand": "cd client && npm run build",
   "outputDirectory": "client/dist",
   "functions": {
-    "api/**/*.js": {
+    "server.js": {
       "runtime": "nodejs18.x"
     }
   },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/api/(.*)", "destination": "/server.js" },
+    { "source": "/(.*)", "destination": "/server.js" }
   ]
 }
