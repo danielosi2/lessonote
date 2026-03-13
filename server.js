@@ -2,27 +2,167 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
-const fs = require('fs');
-const path = require('path');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Load curriculum data once at startup
-const curriculum = JSON.parse(
-  fs.readFileSync(path.join(__dirname, 'curriculum.json'), 'utf-8')
-);
+// Embedded curriculum data (NERDC scheme of work)
+const curriculum = {
+  "JSS 1": {
+    "Mathematics": {
+      "First Term": [
+        { "week": 1, "topics": { "Number Bases": "Introduction to number bases (base 2, 8, 10)", "Counting": "Counting in thousands" } },
+        { "week": 2, "topics": { "Whole Numbers": "Ordering and rounding whole numbers" } },
+        { "week": 3, "topics": { "Fractions": "Introduction to fractions" } }
+      ],
+      "Second Term": [
+        { "week": 1, "topics": { "Fractions": "Proper and improper fractions" } },
+        { "week": 2, "topics": { "Decimals": "Addition and subtraction of decimals" } }
+      ],
+      "Third Term": [
+        { "week": 1, "topics": { "Revision": "Review of first and second term work" } }
+      ]
+    },
+    "English Language": {
+      "First Term": [
+        { "week": 1, "topics": { "Speech": "Vowels and consonants", "Composition": "Paragraph writing" } },
+        { "week": 2, "topics": { "Grammar": "Nouns and pronouns" } },
+        { "week": 3, "topics": { "Comprehension": "Reading for main ideas" } }
+      ],
+      "Second Term": [
+        { "week": 1, "topics": { "Grammar": "Verbs and tenses" } }
+      ],
+      "Third Term": [
+        { "week": 1, "topics": { "Revision": "Term review" } }
+      ]
+    }
+  },
+  "JSS 2": {
+    "Mathematics": {
+      "First Term": [
+        { "week": 1, "topics": { "Algebra": "Simple equations" } },
+        { "week": 2, "topics": { "Geometry": "Angles and triangles" } },
+        { "week": 3, "topics": { "Statistics": "Data collection and representation" } }
+      ],
+      "Second Term": [
+        { "week": 1, "topics": { "Algebra": "Inequalities" } }
+      ],
+      "Third Term": [
+        { "week": 1, "topics": { "Revision": "Term review" } }
+      ]
+    }
+  },
+  "JSS 3": {
+    "Mathematics": {
+      "First Term": [
+        { "week": 1, "topics": { "Algebra": "Simultaneous equations" } },
+        { "week": 2, "topics": { "Geometry": "Circle theorems" } },
+        { "week": 3, "topics": { "Trigonometry": "Basic trigonometric ratios" } }
+      ],
+      "Second Term": [
+        { "week": 1, "topics": { "Statistics": "Probability" } }
+      ],
+      "Third Term": [
+        { "week": 1, "topics": { "Revision": "WAEC preparation" } }
+      ]
+    }
+  },
+  "SSS 1": {
+    "Mathematics": {
+      "First Term": [
+        { "week": 1, "topics": { "Number Bases": "Base 2, 8, 10 conversion" } },
+        { "week": 2, "topics": { "Exponents": "Laws of exponents" } },
+        { "week": 3, "topics": { "Logarithms": "Introduction to logarithms" } }
+      ],
+      "Second Term": [
+        { "week": 1, "topics": { "Trigonometry": "Trigonometric ratios" } }
+      ],
+      "Third Term": [
+        { "week": 1, "topics": { "Revision": "Term review" } }
+      ]
+    },
+    "Physics": {
+      "First Term": [
+        { "week": 1, "topics": { "Measurement": "Length, mass, time, SI units" } },
+        { "week": 2, "topics": { "Motion": "Speed, velocity, acceleration" } },
+        { "week": 3, "topics": { "Force": "Types of forces, Newton's laws" } }
+      ],
+      "Second Term": [
+        { "week": 1, "topics": { "Energy": "Forms of energy, conservation" } }
+      ],
+      "Third Term": [
+        { "week": 1, "topics": { "Revision": "Term review" } }
+      ]
+    },
+    "Chemistry": {
+      "First Term": [
+        { "week": 1, "topics": { "Matter": "States of matter, changes" } },
+        { "week": 2, "topics": { "Atomic Structure": "Protons, neutrons, electrons" } },
+        { "week": 3, "topics": { "Periodic Table": "Organization and trends" } }
+      ],
+      "Second Term": [
+        { "week": 1, "topics": { "Chemical Bonding": "Ionic and covalent bonds" } }
+      ],
+      "Third Term": [
+        { "week": 1, "topics": { "Revision": "Term review" } }
+      ]
+    },
+    "Biology": {
+      "First Term": [
+        { "week": 1, "topics": { "Cell": "Cell structure and organization" } },
+        { "week": 2, "topics": { "Cell": "Cell functions and division" } },
+        { "week": 3, "topics": { "Ecology": "Ecosystems and habitats" } }
+      ],
+      "Second Term": [
+        { "week": 1, "topics": { "Nutrition": "Types of nutrition" } }
+      ],
+      "Third Term": [
+        { "week": 1, "topics": { "Revision": "Term review" } }
+      ]
+    }
+  },
+  "SSS 2": {
+    "Mathematics": {
+      "First Term": [
+        { "week": 1, "topics": { "Algebraic Processes": "Factorization" } },
+        { "week": 2, "topics": { "Geometry": "Circle theorems" } },
+        { "week": 3, "topics": { "Statistics": "Measures of central tendency" } }
+      ],
+      "Second Term": [
+        { "week": 1, "topics": { "Trigonometry": "Sine and cosine rules" } }
+      ],
+      "Third Term": [
+        { "week": 1, "topics": { "Revision": "Term review" } }
+      ]
+    }
+  },
+  "SSS 3": {
+    "Mathematics": {
+      "First Term": [
+        { "week": 1, "topics": { "Revision": "WAEC/NECO preparation" } },
+        { "week": 2, "topics": { "Statistics": "Probability and statistics" } },
+        { "week": 3, "topics": { "Calculus": "Introduction to differentiation" } }
+      ],
+      "Second Term": [
+        { "week": 1, "topics": { "Revision": "External exam preparation" } }
+      ],
+      "Third Term": [
+        { "week": 1, "topics": { "Revision": "Final exam preparation" } }
+      ]
+    }
+  }
+};
 
 // In-memory note cache
 const noteCache = new Map();
 
 // OpenRouter free models (rotate if one hits quota)
 const FREE_MODELS = [
-  'meta-llama/llama-3.1-8b-instruct:free',
-  'google/gemma-2-9b-it:free',
-  'microsoft/phi-3-mini-128k-instruct:free',
-  'mistralai/mistral-7b-instruct:free',
+  'openrouter/hunter-alpha',
+  'stepfun/step-3.5-flash:free',
+  'arcee-ai/trinity-large-preview:free',
+  'openrouter/free',
 ];
 
 let currentModelIndex = 0;
@@ -31,7 +171,6 @@ async function generateWithAI(prompt) {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) throw new Error('Missing OPENROUTER_API_KEY');
   
-  // Try each free model
   for (let attempt = 0; attempt < FREE_MODELS.length; attempt++) {
     const model = FREE_MODELS[currentModelIndex];
     
@@ -51,10 +190,8 @@ async function generateWithAI(prompt) {
       return response.data.choices[0].message.content;
     } catch (err) {
       console.log(`[AI] Model ${model} failed: ${err.message}`);
-      // Rotate to next model
       currentModelIndex = (currentModelIndex + 1) % FREE_MODELS.length;
       
-      // If this was the last model, throw error
       if (attempt === FREE_MODELS.length - 1) {
         throw new Error('All free models exhausted. Try again later.');
       }
@@ -62,22 +199,18 @@ async function generateWithAI(prompt) {
   }
 }
 
-// Helper: get weeks array for class/subject/term
-function getWeeks(cls, subject, term) {
+function getWeekData(cls, subject, term, weekNum) {
   try {
-    return curriculum[cls][subject][term] || [];
+    const weeks = curriculum[cls][subject][term];
+    return weeks.find(w => String(w.week) === String(weekNum)) || null;
   } catch {
-    return [];
+    return null;
   }
 }
 
-// Helper: get single week entry by week number
-function getWeekData(cls, subject, term, weekNum) {
-  const weeks = getWeeks(cls, subject, term);
-  return weeks.find(w => String(w.week) === String(weekNum)) || null;
-}
+// API Routes
 
-// GET /api/curriculum - structure: classes > subjects > terms > [week numbers]
+// GET /api/curriculum
 app.get('/api/curriculum', (req, res) => {
   const structure = {};
   for (const cls of Object.keys(curriculum)) {
@@ -95,7 +228,7 @@ app.get('/api/curriculum', (req, res) => {
   res.json(structure);
 });
 
-// GET /api/week?cls=JSS1&subject=Mathematics&term=First Term&week=1
+// GET /api/week
 app.get('/api/week', (req, res) => {
   const { cls, subject, term, week } = req.query;
   const data = getWeekData(cls, subject, term, week);
@@ -110,7 +243,7 @@ app.post('/api/generate', async (req, res) => {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
-  const cacheKey = cls + '||' + subject + '||' + term + '||' + week;
+  const cacheKey = `${cls}||${subject}||${term}||${week}`;
   if (noteCache.has(cacheKey)) {
     return res.json({ note: noteCache.get(cacheKey), cached: true });
   }
@@ -127,43 +260,67 @@ app.post('/api/generate', async (req, res) => {
   }
   if (!topicContext.trim()) topicContext = 'Revision / Examination week';
 
-  const prompt = 'You are an expert Nigerian secondary school teacher writing a detailed lesson note.\n\n'
-    + 'Class: ' + cls + '\n'
-    + 'Subject: ' + subject + '\n'
-    + 'Term: ' + term + '\n'
-    + 'Week: ' + week + '\n\n'
-    + 'Curriculum Content for this week:\n' + topicContext + '\n'
-    + 'Write a comprehensive, well-structured lesson note using this exact format:\n\n'
-    + '## LESSON NOTE\n\n'
-    + '**Subject:** ' + subject + '\n'
-    + '**Class:** ' + cls + '\n'
-    + '**Term:** ' + term + '\n'
-    + '**Week:** Week ' + week + '\n'
-    + '**Duration:** 40 minutes\n\n'
-    + '---\n\n'
-    + '### Topic(s)\n'
-    + '(State the topic(s) clearly from the curriculum content)\n\n'
-    + '### Learning Objectives\n'
-    + 'By the end of this lesson, students should be able to:\n'
-    + '(List 3-5 clear, measurable objectives)\n\n'
-    + '### Materials/Resources\n'
-    + '(List relevant teaching aids, textbooks, charts etc.)\n\n'
-    + '### Previous Knowledge\n'
-    + '(What students already know that connects to this lesson)\n\n'
-    + '### Introduction / Set Induction (5 minutes)\n'
-    + '(An engaging opening activity or question to capture attention)\n\n'
-    + '### Lesson Development (25 minutes)\n\n'
-    + '**Step 1:**\n(Teacher activity and student activity)\n\n'
-    + '**Step 2:**\n(Teacher activity and student activity)\n\n'
-    + '**Step 3:**\n(Teacher activity and student activity)\n\n'
-    + '### Evaluation / Class Assessment\n'
-    + '(5-7 questions to test understanding)\n\n'
-    + '### Conclusion / Summary (5 minutes)\n'
-    + '(Wrap up key points of the lesson)\n\n'
-    + '### Assignment\n'
-    + '(A meaningful homework task)\n\n'
-    + '---\n\n'
-    + 'Make the note practical, detailed, and appropriate for Nigerian secondary school students following the NERDC curriculum.';
+  const prompt = `You are an expert Nigerian secondary school teacher writing a detailed lesson note.
+
+Class: ${cls}
+Subject: ${subject}
+Term: ${term}
+Week: ${week}
+
+Curriculum Content for this week:
+${topicContext}
+
+Write a comprehensive, well-structured lesson note using this exact format:
+
+## LESSON NOTE
+
+**Subject:** ${subject}
+**Class:** ${cls}
+**Term:** ${term}
+**Week:** Week ${week}
+**Duration:** 40 minutes
+
+---
+
+### Topic(s)
+(State the topic(s) clearly from the curriculum content)
+
+### Learning Objectives
+By the end of this lesson, students should be able to:
+(List 3-5 clear, measurable objectives)
+
+### Materials/Resources
+(List relevant teaching aids, textbooks, charts etc.)
+
+### Previous Knowledge
+(What students already know that connects to this lesson)
+
+### Introduction / Set Induction (5 minutes)
+(An engaging opening activity or question to capture attention)
+
+### Lesson Development (25 minutes)
+
+**Step 1:**
+(Teacher activity and student activity)
+
+**Step 2:**
+(Teacher activity and student activity)
+
+**Step 3:**
+(Teacher activity and student activity)
+
+### Evaluation / Class Assessment
+(5-7 questions to test understanding)
+
+### Conclusion / Summary (5 minutes)
+(Wrap up key points of the lesson)
+
+### Assignment
+(A meaningful homework task)
+
+---
+
+Make the note practical, detailed, and appropriate for Nigerian secondary school students following the NERDC curriculum.`;
 
   try {
     const note = await generateWithAI(prompt);
@@ -180,11 +337,16 @@ app.get('/api/cache/stats', (req, res) => {
   res.json({ cachedNotes: noteCache.size });
 });
 
-// Serve React build in production
-app.use(express.static(path.join(__dirname, 'client/dist')));
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'client/dist/index.html'));
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log('Server running on port ' + PORT));
+// For Vercel serverless
+module.exports = app;
+
+// For local development
+if (require.main === module) {
+  const PORT = process.env.PORT || 3001;
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+}

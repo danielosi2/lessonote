@@ -1,9 +1,9 @@
 {
   "version": 2,
-  "rewrites": [
-    { "source": "/api/generate", "destination": "/api/generate.js" },
-    { "source": "/api/curriculum", "destination": "/api/curriculum.js" },
-    { "source": "/api/week", "destination": "/api/week.js" },
-    { "source": "/api/cache/stats", "destination": "/api/cache/stats.js" }
+  "builds": [
+    { "src": "server.js", "use": "@vercel/node" }
+  ],
+  "routes": [
+    { "src": "/(.*)", "dest": "server.js" }
   ]
 }
