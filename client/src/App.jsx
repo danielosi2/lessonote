@@ -9,9 +9,9 @@ export default function App() {
   const [cls, setCls] = useState('');
   const [subject, setSubject] = useState('');
   const [term, setTerm] = useState('');
-  const [week, setWeek] = useState('');
   const [loading, setLoading] = useState(false);
   const [note, setNote] = useState('');
+  const [noteMeta, setNoteMeta] = useState(null);
   const [cached, setCached] = useState(false);
   const [error, setError] = useState('');
   const [cacheStats, setCacheStats] = useState(null);
@@ -28,34 +28,54 @@ export default function App() {
   }, []);
 
   const classes = curriculum ? Object.keys(curriculum) : [];
-  const subjects = cls && curriculum ? Object.keys(curriculum[cls]) : [];
+  const subjects = cls && curriculum ? Object.keys(curriculum[cls] || {}) : [];
   const terms = subject && curriculum?.[cls]?.[subject] ? Object.keys(curriculum[cls][subject]) : [];
-  const weeks = term && curriculum?.[cls]?.[subject]?.[term] ? curriculum[cls][subject][term] : [];
+  const topics = term && curriculum?.[cls]?.[subject]?.[term] ? curriculum[cls][subject][term] : [];
 
-  const handleClassChange = (val) => { setCls(val); setSubject(''); setTerm(''); setWeek(''); setNote(''); setError(''); };
-  const handleSubjectChange = (val) => { setSubject(val); setTerm(''); setWeek(''); setNote(''); setError(''); };
-  const handleTermChange = (val) => { setTerm(val); setWeek(''); setNote(''); setError(''); };
-  const handleWeekChange = (val) => { setWeek(val); setNote(''); setError(''); };
+  const handleClassChange = (val) => {
+    setCls(val);
+    setSubject('');
+    setTerm('');
+    setNote('');
+    setNoteMeta(null);
+    setError('');
+  };
 
-  const generate = async () => {
-    if (!cls || !subject || !term || !week) {
-      setError('Please select all fields before generating.');
-      return;
-    }
+  const handleSubjectChange = (val) => {
+    setSubject(val);
+    setTerm('');
+    setNote('');
+    setNoteMeta(null);
+    setError('');
+  };
+
+  const handleTermChange = (val) => {
+    setTerm(val);
+    setNote('');
+    setNoteMeta(null);
+    setError('');
+  };
+
+  const generateForTopic = async (weekNum, topicName) => {
     setLoading(true);
     setNote('');
+    setNoteMeta(null);
     setError('');
     try {
       const res = await fetch(API + '/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cls, subject, term, week })
+        body: JSON.stringify({ cls, subject, term, week: weekNum, topic: topicName })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Generation failed');
       setNote(data.note);
       setCached(data.cached);
-      setCacheStats(prev => prev ? { ...prev, cachedNotes: data.cached ? prev.cachedNotes : prev.cachedNotes + 1 } : null);
+      setNoteMeta({ week: weekNum, topic: topicName });
+      setCacheStats(prev => prev
+        ? { ...prev, cachedNotes: data.cached ? prev.cachedNotes : prev.cachedNotes + 1 }
+        : null
+      );
     } catch (e) {
       setError(e.message);
     } finally {
@@ -68,8 +88,6 @@ export default function App() {
     setCopying(true);
     setTimeout(() => setCopying(false), 2000);
   };
-
-  const isReady = cls && subject && term && week;
 
   return (
     <div className="app">
@@ -96,7 +114,9 @@ export default function App() {
         {/* Selection Panel */}
         <div className="card selector-card">
           <h2 className="card-title">Generate Lesson Note</h2>
-          <p className="card-sub">Select your class, subject, term, and week to generate a comprehensive lesson note.</p>
+          <p className="card-sub">
+            Select your class, subject, and term — then pick a topic to generate a lesson note.
+          </p>
 
           <div className="selectors">
             {/* Class */}
@@ -131,33 +151,42 @@ export default function App() {
                 </select>
               </div>
             </div>
-
-            {/* Week */}
-            <div className="select-group">
-              <label>Week</label>
-              <div className="select-wrap">
-                <select value={week} onChange={e => handleWeekChange(e.target.value)} disabled={!term}>
-                  <option value="">Select week...</option>
-                  {weeks.map(w => <option key={w} value={w}>Week {w}</option>)}
-                </select>
-              </div>
-            </div>
           </div>
 
           {error && <div className="error-msg">{error}</div>}
-
-          <button
-            className={'generate-btn' + (loading ? ' loading' : '') + (!isReady ? ' disabled' : '')}
-            onClick={generate}
-            disabled={loading || !isReady}
-          >
-            {loading ? (
-              <><span className="spinner"></span> Generating with Gemini 2.5 Flash...</>
-            ) : (
-              <><span>✨</span> Generate Lesson Note</>
-            )}
-          </button>
         </div>
+
+        {/* Topic List */}
+        {term && topics.length > 0 && !loading && !note && (
+          <div className="card topics-card">
+            <h2 className="card-title">
+              {subject} — {term}
+            </h2>
+            <p className="card-sub">Click any topic to generate a lesson note</p>
+            <div className="topic-list">
+              {topics.map((t, i) => (
+                <button
+                  key={i}
+                  className="topic-item"
+                  onClick={() => generateForTopic(t.week, t.topic)}
+                >
+                  <span className="topic-week">Week {t.week}</span>
+                  <span className="topic-name">{t.topic}</span>
+                  {t.hasContent && <span className="topic-badge">✓</span>}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Loading */}
+        {loading && (
+          <div className="card loading-card">
+            <div className="loading-spinner"></div>
+            <h3>Generating lesson note...</h3>
+            <p>AI is writing your note. This takes 15–30 seconds.</p>
+          </div>
+        )}
 
         {/* Note Output */}
         {note && (
@@ -169,13 +198,18 @@ export default function App() {
                   <span className="tag">{cls}</span>
                   <span className="tag">{subject}</span>
                   <span className="tag">{term}</span>
-                  <span className="tag">Week {week}</span>
+                  {noteMeta && <span className="tag">Week {noteMeta.week} — {noteMeta.topic}</span>}
                   {cached && <span className="tag cached">⚡ Cached</span>}
                 </div>
               </div>
-              <button className="copy-btn" onClick={copyNote}>
-                {copying ? '✓ Copied!' : '📋 Copy'}
-              </button>
+              <div className="note-actions">
+                <button className="back-btn" onClick={() => { setNote(''); setNoteMeta(null); }}>
+                  ← Back to topics
+                </button>
+                <button className="copy-btn" onClick={copyNote}>
+                  {copying ? '✓ Copied!' : '📋 Copy'}
+                </button>
+              </div>
             </div>
             <div className="note-body">
               <ReactMarkdown>{note}</ReactMarkdown>
@@ -184,15 +218,15 @@ export default function App() {
         )}
 
         {/* Empty state */}
-        {!note && !loading && (
+        {!term && !loading && (
           <div className="empty-state">
             <div className="empty-icon">🎓</div>
             <h3>Ready to generate</h3>
-            <p>Select your class, subject, term and week above, then click Generate.</p>
+            <p>Select your class, subject, and term above to see available topics.</p>
             <div className="features">
               <div className="feature"><span>📖</span><p>NERDC curriculum aligned</p></div>
               <div className="feature"><span>⚡</span><p>Smart caching — generate once</p></div>
-              <div className="feature"><span>🤖</span><p>Powered by Gemini 2.5 Flash</p></div>
+              <div className="feature"><span>🤖</span><p>Powered by OpenRouter AI</p></div>
             </div>
           </div>
         )}
