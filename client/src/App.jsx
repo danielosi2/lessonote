@@ -217,12 +217,12 @@ export default function App() {
   }
 
   return (
-    <div className="app">
+    <div className="app" aria-busy={loading}>
       {/* Header */}
       <header className="header">
         <div className="header-inner">
           <div className="logo">
-            <span className="logo-icon">📚</span>
+            <span className="logo-icon" aria-hidden="true">📚</span>
             <div>
               <h1>edunotesng</h1>
               <p>AI-Powered Lesson Note Generator</p>
@@ -230,7 +230,7 @@ export default function App() {
           </div>
           {cacheStats && (
             <div className="cache-badge">
-              <span className="dot green"></span>
+              <span className="dot green" aria-hidden="true"></span>
               {cacheStats.cachedNotes} notes cached
             </div>
           )}
@@ -281,9 +281,9 @@ export default function App() {
           </div>
 
           {error && (
-            <div className="error-msg">
+            <div className="error-msg" role="alert" aria-live="assertive">
               <span>{error}</span>
-              <button className="error-dismiss" onClick={dismissError}>×</button>
+              <button className="error-dismiss" onClick={dismissError} aria-label="Dismiss error">×</button>
             </div>
           )}
         </div>
@@ -313,8 +313,8 @@ export default function App() {
 
         {/* Loading */}
         {loading && (
-          <div className="card loading-card">
-            <div className="loading-spinner"></div>
+          <div className="card loading-card" aria-busy="true" role="status" aria-live="polite">
+            <div className="loading-spinner" aria-hidden="true"></div>
             <h3>Generating lesson note...</h3>
             <p>AI is writing your note. This takes 15–30 seconds.</p>
           </div>
@@ -338,10 +338,10 @@ export default function App() {
                 <button className="back-btn" onClick={() => { setNote(''); setNoteMeta(null); }}>
                   ← Back to topics
                 </button>
-                <button className="copy-btn" onClick={copyNote}>
+                <button className="copy-btn" onClick={copyNote} aria-label="Copy note to clipboard">
                   {copying ? '✓ Copied!' : '📋 Copy'}
                 </button>
-                <button className="pdf-btn" onClick={downloadPDF}>
+                <button className="pdf-btn" onClick={downloadPDF} aria-label="Download note as PDF">
                   📄 PDF
                 </button>
               </div>
