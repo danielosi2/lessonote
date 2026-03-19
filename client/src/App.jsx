@@ -55,6 +55,15 @@ export default function App() {
     };
   }, []);
 
+  // Cleanup: abort any pending request on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
+
   const classes = curriculum ? Object.keys(curriculum) : [];
   const subjects = cls && curriculum ? Object.keys(curriculum[cls] || {}) : [];
   const terms = subject && curriculum?.[cls]?.[subject] ? Object.keys(curriculum[cls][subject]) : [];
@@ -127,12 +136,16 @@ export default function App() {
       );
     } catch (e) {
       // Ignore aborted errors
-      if (e.name === 'AbortError') return;
+      if (e.name === 'AbortError') {
+        console.log('[Request aborted]');
+        return;
+      }
       const errorMsg = e.message || 'Failed to generate lesson note. Please try again.';
       setError(errorMsg);
       console.error('[Generate error]', errorMsg, e);
     } finally {
       setLoading(false);
+      abortControllerRef.current = null;
     }
   };
 
