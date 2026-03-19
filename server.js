@@ -4,10 +4,33 @@ const cors = require('cors');
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
+const compression = require('compression');
+const morgan = require('morgan');
+const rateLimit = require('express-rate-limit');
 
 const app = express();
+
+// Security & Performance middlewares
+app.use(compression());
+app.use(morgan('combined'));
+
+// CORS: allow all for now (could restrict to your frontend domain)
 app.use(cors());
+
 app.use(express.json());
+
+// Rate limiting for generate endpoint
+const generateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30, // max 30 generations per IP per window
+  message: { error: 'Too many requests. Please try again later.' },
+  standardHeaders: true,
+});
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', cacheSize: noteCache.size, uptime: process.uptime() });
+});
 
 // Load curriculum data once at startup
 const curriculum = JSON.parse(
@@ -107,7 +130,7 @@ app.get('/api/week', (req, res) => {
 });
 
 // POST /api/generate
-app.post('/api/generate', async (req, res) => {
+app.post('/api/generate', generateLimiter, async (req, res) => {
   const { cls, subject, term, week, topic } = req.body;
   if (!cls || !subject || !term || !week) {
     return res.status(400).json({ error: 'Missing required fields' });
