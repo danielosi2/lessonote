@@ -21,7 +21,11 @@ const noteCache = new Map();
 
 // OpenRouter free models (rotate if one hits quota)
 const FREE_MODELS = [
-  'openrouter/stepfun/step-3.5-flash:free',
+  'openrouter/stepfun/step-3.5-flash:free', // primary
+  'openrouter/hunter-alpha',
+  'meta-llama/llama-3.1-8b-instruct:free',
+  'google/gemma-2-9b-it:free',
+  'cognitivecomputations/dolphin3.0-mistral-24b:free',
 ];
 
 let currentModelIndex = 0;
