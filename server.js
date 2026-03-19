@@ -25,7 +25,6 @@ const FREE_MODELS = [
   'openrouter/hunter-alpha',
   'meta-llama/llama-3.1-8b-instruct:free',
   'google/gemma-2-9b-it:free',
-  'cognitivecomputations/dolphin3.0-mistral-24b:free',
 ];
 
 let currentModelIndex = 0;
