@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import './App.css';
 
@@ -17,6 +17,7 @@ export default function App() {
   const [cacheStats, setCacheStats] = useState(null);
   const [copying, setCopying] = useState(false);
   const [onboardingComplete, setOnboardingComplete] = useState(false);
+  const abortControllerRef = useRef(null);
 
   useEffect(() => {
     // Check onboarding status
@@ -24,12 +25,34 @@ export default function App() {
     setOnboardingComplete(completed);
 
     fetch(API + '/api/curriculum')
-      .then(r => r.json())
+      .then(r => {
+        if (!r.ok) throw new Error(`Curriculum load failed: ${r.status}`);
+        return r.json();
+      })
       .then(data => {
         setCurriculum(data);
-        fetch(API + '/api/cache/stats').then(r => r.json()).then(setCacheStats);
+        // Load cache stats (non-critical)
+        fetch(API + '/api/cache/stats')
+          .then(r => r.json())
+          .then(setCacheStats)
+          .catch(err => {
+            console.warn('[Cache stats]', err.message);
+          });
       })
-      .catch(() => setError('Failed to load curriculum. Is the server running?'));
+      .catch(err => {
+        const errorMsg = 'Failed to load curriculum. Is the server running?';
+        setError(errorMsg);
+        console.error('[Curriculum load]', errorMsg, err);
+      });
+  }, []);
+
+  // Cleanup: abort any pending request on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, []);
 
   const classes = curriculum ? Object.keys(curriculum) : [];
@@ -62,6 +85,12 @@ export default function App() {
   };
 
   const generateForTopic = async (weekNum, topicName) => {
+    // Cancel any pending request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+
     setLoading(true);
     setNote('');
     setNoteMeta(null);
@@ -70,10 +99,25 @@ export default function App() {
       const res = await fetch(API + '/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cls, subject, term, week: weekNum, topic: topicName })
+        body: JSON.stringify({ cls, subject, term, week: weekNum, topic: topicName }),
+        signal: abortControllerRef.current.signal
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Generation failed');
+      if (!res.ok) {
+        // Rate limit / quota issues
+        if (res.status === 429 || data.error?.includes('exhausted') || data.error?.includes('quota')) {
+          throw new Error('Free limit reached. Please try again later.');
+        }
+        // Empty or invalid response
+        if (!data.note || typeof data.note !== 'string' || data.note.trim() === '') {
+          throw new Error('No content generated. Try again.');
+        }
+        throw new Error(data.error || 'Failed to generate lesson note.');
+      }
+      // Validate we got a note
+      if (!data.note || typeof data.note !== 'string' || data.note.trim() === '') {
+        throw new Error('No content generated. Try again.');
+      }
       setNote(data.note);
       setCached(data.cached);
       setNoteMeta({ week: weekNum, topic: topicName });
@@ -82,7 +126,11 @@ export default function App() {
         : null
       );
     } catch (e) {
-      setError(e.message);
+      // Ignore aborted errors
+      if (e.name === 'AbortError') return;
+      const errorMsg = e.message || 'Failed to generate lesson note. Please try again.';
+      setError(errorMsg);
+      console.error('[Generate error]', errorMsg, e);
     } finally {
       setLoading(false);
     }
@@ -101,6 +149,10 @@ export default function App() {
   const completeOnboarding = () => {
     localStorage.setItem('edunotesng-onboarding', 'true');
     setOnboardingComplete(true);
+  };
+
+  const dismissError = () => {
+    setError('');
   };
 
   // If onboarding not complete, show onboarding screen
@@ -215,7 +267,12 @@ export default function App() {
             </div>
           </div>
 
-          {error && <div className="error-msg">{error}</div>}
+          {error && (
+            <div className="error-msg">
+              <span>{error}</span>
+              <button className="error-dismiss" onClick={dismissError}>×</button>
+            </div>
+          )}
         </div>
 
         {/* Topic List */}
