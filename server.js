@@ -160,45 +160,34 @@ Write a comprehensive, well-structured lesson note using this exact format:
 
 ---
 
-### Topic(s)
-(State the topic(s) clearly from the curriculum content)
+### 01 Learning Objectives
+- Clear bullet points stating what students should achieve
 
-### Learning Objectives
-By the end of this lesson, students should be able to:
-(List 3-5 clear, measurable objectives)
+### 02 Introduction
+- Background and real-life context
+- Simple explanation of why the topic is important
 
-### Materials/Resources
-(List relevant teaching aids, textbooks, charts etc.)
+### 03 Key Concepts and Explanation
+- Define the topic clearly
+- Break into subtopics
+- Explain each part in simple language
+- Include examples inside explanations
 
-### Previous Knowledge
-(What students already know that connects to this lesson)
+### 04 Examples
+- Multiple worked examples
+- Step-by-step solutions
 
-### Introduction / Set Induction (5 minutes)
-(An engaging opening activity or question to capture attention)
+### 05 Class Activity or Discussion Questions
+- Practice questions
+- Can include group or individual tasks
 
-### Lesson Development (25 minutes)
-
-**Step 1:**
-(Teacher activity and student activity)
-
-**Step 2:**
-(Teacher activity and student activity)
-
-**Step 3:**
-(Teacher activity and student activity)
-
-### Evaluation / Class Assessment
-(5-7 questions to test understanding)
-
-### Conclusion / Summary (5 minutes)
-(Wrap up key points of the lesson)
-
-### Assignment
-(A meaningful homework task)
+### 06 Summary
+- Recap key points
+- Reinforce understanding
 
 ---
 
-Make the note practical, detailed, and appropriate for Nigerian secondary school students following the NERDC curriculum.`;
+Follow the curriculum content exactly. Use simple language suitable for secondary school students. Be detailed but clear. Number sections exactly as shown: 01, 02, 03, 04, 05, 06. Do not skip any section. The note should look like real classroom notes students can read and study.`;
 
   try {
     const note = await generateWithAI(prompt);
