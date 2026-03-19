@@ -16,8 +16,13 @@ export default function App() {
   const [error, setError] = useState('');
   const [cacheStats, setCacheStats] = useState(null);
   const [copying, setCopying] = useState(false);
+  const [onboardingComplete, setOnboardingComplete] = useState(false);
 
   useEffect(() => {
+    // Check onboarding status
+    const completed = localStorage.getItem('edunotesng-onboarding') === 'true';
+    setOnboardingComplete(completed);
+
     fetch(API + '/api/curriculum')
       .then(r => r.json())
       .then(data => {
@@ -93,6 +98,59 @@ export default function App() {
     window.print();
   };
 
+  const completeOnboarding = () => {
+    localStorage.setItem('edunotesng-onboarding', 'true');
+    setOnboardingComplete(true);
+  };
+
+  // If onboarding not complete, show onboarding screen
+  if (!onboardingComplete) {
+    return (
+      <div className="app onboarding">
+        <div className="onboarding-card">
+          <div className="onboarding-icon">📚</div>
+          <h1>Welcome to edunotesng</h1>
+          <p className="onboarding-subtitle">AI-Powered Lesson Notes for Nigerian Secondary Schools</p>
+          
+          <div className="onboarding-features">
+            <div className="feature">
+              <span>🎯</span>
+              <div>
+                <strong>NERDC Curriculum</strong>
+                <p>Full coverage of JSS1–SSS3 subjects and weekly topics</p>
+              </div>
+            </div>
+            <div className="feature">
+              <span>🤖</span>
+              <div>
+                <strong>Smart AI Generation</strong>
+                <p>Creates detailed, structured lesson notes in seconds</p>
+              </div>
+            </div>
+            <div className="feature">
+              <span>📄</span>
+              <div>
+                <strong>Download & Share</strong>
+                <p>Export notes as PDF or copy to clipboard</p>
+              </div>
+            </div>
+            <div className="feature">
+              <span>⚡</span>
+              <div>
+                <strong>Instant Access</strong>
+                <p>No registration required — just select and generate</p>
+              </div>
+            </div>
+          </div>
+
+          <button className="onboarding-cta" onClick={completeOnboarding}>
+            Get Started
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="app">
       {/* Header */}
@@ -101,7 +159,7 @@ export default function App() {
           <div className="logo">
             <span className="logo-icon">📚</span>
             <div>
-              <h1>LessoNote</h1>
+              <h1>edunotesng</h1>
               <p>AI-Powered Lesson Note Generator</p>
             </div>
           </div>
