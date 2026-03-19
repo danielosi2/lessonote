@@ -307,6 +307,20 @@
   transition: background 0.2s;
 }
 .back-btn:hover { background: var(--border); }
+.pdf-btn {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.pdf-btn:hover { background: var(--border); }
 
 /* Empty State */
 .empty-state {
@@ -331,3 +345,34 @@
 }
 .feature span { font-size: 28px; }
 .feature p { font-size: 13px; max-width: 120px; }
+
+/* Print Styles */
+@media print {
+  @page {
+    margin: 20mm;
+  }
+  body * {
+    visibility: hidden;
+  }
+  .note-card, .note-card * {
+    visibility: visible;
+  }
+  .note-card {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: white;
+    color: black;
+  }
+  .note-header, .note-actions, .cache-badge {
+    display: none !important;
+  }
+  .note-body {
+    font-size: 12pt;
+    line-height: 1.6;
+  }
+}

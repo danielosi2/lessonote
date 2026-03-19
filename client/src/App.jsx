@@ -89,6 +89,10 @@ export default function App() {
     setTimeout(() => setCopying(false), 2000);
   };
 
+  const downloadPDF = () => {
+    window.print();
+  };
+
   return (
     <div className="app">
       {/* Header */}
@@ -208,6 +212,9 @@ export default function App() {
                 </button>
                 <button className="copy-btn" onClick={copyNote}>
                   {copying ? '✓ Copied!' : '📋 Copy'}
+                </button>
+                <button className="pdf-btn" onClick={downloadPDF}>
+                  📄 PDF
                 </button>
               </div>
             </div>
