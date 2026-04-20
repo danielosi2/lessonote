@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
+import Onboarding from './components/Onboarding';
 import './App.css';
 
 const API = '';
@@ -21,7 +22,7 @@ export default function App() {
 
   useEffect(() => {
     // Check onboarding status
-    const completed = localStorage.getItem('edunotesng-onboarding') === 'true';
+    const completed = localStorage.getItem('lessonote-onboarding') === 'true';
     setOnboardingComplete(completed);
 
     fetch(API + '/api/curriculum')
@@ -160,60 +161,21 @@ export default function App() {
   };
 
   const completeOnboarding = () => {
-    localStorage.setItem('edunotesng-onboarding', 'true');
+    localStorage.setItem('lessonote-onboarding', 'true');
     setOnboardingComplete(true);
+  };
+
+  const handleOnboardingComplete = () => {
+    completeOnboarding();
   };
 
   const dismissError = () => {
     setError('');
   };
 
-  // If onboarding not complete, show onboarding screen
+  // If onboarding not complete, show enhanced onboarding screen
   if (!onboardingComplete) {
-    return (
-      <div className="app onboarding">
-        <div className="onboarding-card">
-          <div className="onboarding-icon">📚</div>
-          <h1>Welcome to edunotesng</h1>
-          <p className="onboarding-subtitle">AI-Powered Lesson Notes for Nigerian Secondary Schools</p>
-          
-          <div className="onboarding-features">
-            <div className="feature">
-              <span>🎯</span>
-              <div>
-                <strong>NERDC Curriculum</strong>
-                <p>Full coverage of JSS1–SSS3 subjects and weekly topics</p>
-              </div>
-            </div>
-            <div className="feature">
-              <span>🤖</span>
-              <div>
-                <strong>Smart AI Generation</strong>
-                <p>Creates detailed, structured lesson notes in seconds</p>
-              </div>
-            </div>
-            <div className="feature">
-              <span>📄</span>
-              <div>
-                <strong>Download & Share</strong>
-                <p>Export notes as PDF or copy to clipboard</p>
-              </div>
-            </div>
-            <div className="feature">
-              <span>⚡</span>
-              <div>
-                <strong>Instant Access</strong>
-                <p>No registration required — just select and generate</p>
-              </div>
-            </div>
-          </div>
-
-          <button className="onboarding-cta" onClick={completeOnboarding}>
-            Get Started
-          </button>
-        </div>
-      </div>
-    );
+    return <Onboarding onComplete={handleOnboardingComplete} />;
   }
 
   return (

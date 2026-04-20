@@ -6,8 +6,9 @@ AI-powered lesson note generator for Nigerian secondary school teachers and stud
 
 - **Frontend:** React 18 + Vite (dark UI, ReactMarkdown for note rendering)
 - **Backend:** Node.js + Express
-- **AI:** Google Gemini 2.0 Flash
+- **AI:** DeepSeek v3.2 via OpenRouter (Enhanced quality & reliability)
 - **Curriculum:** 118 subjects, 6 class levels, 4,177 week entries from official NERDC scheme of work
+- **Onboarding:** Interactive multi-step tutorial with configuration check
 
 ## Setup
 
@@ -22,9 +23,9 @@ AI-powered lesson note generator for Nigerian secondary school teachers and stud
 ### 2. Configure environment
 
     cp .env.example .env
-    # Edit .env and add your GEMINI_API_KEY
+    # Edit .env and add your OPENROUTER_API_KEY
 
-Get a free Gemini API key at: https://aistudio.google.com/app/apikey
+Get your OpenRouter API key at: https://openrouter.ai/keys
 
 ### 3. Run in development
 
@@ -54,13 +55,17 @@ The Express server serves the React build at http://localhost:3001
 
 ## Features
 
-- NERDC curriculum-aligned topics for every week
-- Topic preview before generating
-- In-memory caching - each note is only generated once per session
-- Clean dark UI, mobile responsive
-- Works offline for browsing curriculum (only AI generation needs internet)
+- **Enhanced AI:** DeepSeek v3.2 for higher quality lesson notes
+- **Interactive Onboarding:** Multi-step tutorial with AI configuration check
+- **NERDC Curriculum:** Complete coverage with 4,177 week entries
+- **Smart Caching:** In-memory caching for faster repeat access
+- **Mobile Responsive:** Works perfectly on all devices
+- **Export Options:** Copy to clipboard or download as PDF
+- **Fallback System:** Automatic fallback if primary AI model is unavailable
 
 ## Environment Variables
 
-    GEMINI_API_KEY=your_gemini_api_key_here
-    PORT=3001
+    OPENROUTER_API_KEY=your_openrouter_api_key_here
+    PORT=5000
+    OPENROUTER_MODEL=deepseek/deepseek-v3.2
+    FALLBACK_MODEL=google/gemma-3-27b-it:free

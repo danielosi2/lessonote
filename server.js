@@ -42,47 +42,62 @@ console.log(`[Curriculum] Loaded ${Object.keys(curriculum).length} classes`);
 // In-memory note cache
 const noteCache = new Map();
 
-// OpenRouter free models (rotate if one hits quota)
-const FREE_MODELS = [
-  'meta-llama/llama-3.3-70b-instruct:free', // high quality
-  'mistralai/mistral-small-3.1-24b-instruct:free', // fast, multimodal
-  'google/gemma-3-27b-it:free', // good reasoning
-  'nousresearch/hermes-3-llama-3.1-405b:free', // very capable
-  'qwen/qwen3-4b:free', // lightweight fallback
-];
-
-let currentModelIndex = 0;
+// OpenRouter configuration - using DeepSeek v3.2 for best quality
+const OPENROUTER_MODEL = 'deepseek/deepseek-v3.2';
+const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 async function generateWithAI(prompt) {
   const apiKey = process.env.OPENROUTER_API_KEY;
   if (!apiKey) throw new Error('Missing OPENROUTER_API_KEY');
   
-  for (let attempt = 0; attempt < FREE_MODELS.length; attempt++) {
-    const model = FREE_MODELS[currentModelIndex];
-    
-    try {
-      const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
-        model,
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: 4096,
-      }, {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': 'https://lessonote.vercel.app',
+  try {
+    const response = await axios.post(OPENROUTER_API_URL, {
+      model: OPENROUTER_MODEL,
+      messages: [
+        {
+          role: 'system',
+          content: 'You are an expert Nigerian secondary school teacher with deep knowledge of the NERDC curriculum. Create detailed, practical lesson notes that help students learn effectively.'
         },
-        timeout: 60000,
-      });
-      
-      return response.data.choices[0].message.content;
-    } catch (err) {
-      console.log(`[AI] Model ${model} failed: ${err.message}`);
-      currentModelIndex = (currentModelIndex + 1) % FREE_MODELS.length;
-      
-      if (attempt === FREE_MODELS.length - 1) {
-        throw new Error('All free models exhausted. Try again later.');
+        { role: 'user', content: prompt }
+      ],
+      max_tokens: 4096,
+      temperature: 0.7,
+    }, {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://lessonote.vercel.app',
+      },
+      timeout: 60000,
+    });
+    
+    return response.data.choices[0].message.content;
+  } catch (err) {
+    console.error(`[AI] Generation failed: ${err.message}`);
+    
+    // Fallback to more affordable model if DeepSeek fails
+    if (err.response?.status === 429 || err.message.includes('quota')) {
+      console.log('[AI] Falling back to Google Gemma 3 27b');
+      try {
+        const fallbackResponse = await axios.post(OPENROUTER_API_URL, {
+          model: 'google/gemma-3-27b-it:free',
+          messages: [{ role: 'user', content: prompt }],
+          max_tokens: 4096,
+        }, {
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': 'https://lessonote.vercel.app',
+          },
+          timeout: 60000,
+        });
+        return fallbackResponse.data.choices[0].message.content;
+      } catch (fallbackErr) {
+        console.error('[AI] Fallback also failed:', fallbackErr.message);
       }
     }
+    
+    throw new Error('AI generation failed. Please try again in a moment.');
   }
 }
 
